@@ -78,12 +78,12 @@ def sep_data(opt):
                 shutil.move(str(file), str(test_path))
 
             names = [test_path/name for name in os.listdir(test_path) if not name.startswith('.')]
-            names.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
+            names.sort(key=lambda x: int(os.path.splitext(os.path.basename(x).split('_')[-1])[0]))
             for i in range(len(names)):
                 os.rename(names[i], test_path/(str(i) + names[i].suffix))
 
             names = [dirn/name for name in os.listdir(dirn) if not name.startswith('.')]
-            names.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
+            names.sort(key=lambda x: int(os.path.splitext(os.path.basename(x).split('_')[-1])[0]))
             for i in range(len(names)):
                 os.rename(names[i], dirn/(str(i) + names[i].suffix))
 
@@ -108,6 +108,7 @@ def check_img(opt, path=None):
         if file_num > 0:
             for filen in files:
                 try:
+                    print("==> Checking File: ", filen)
                     with Image.open(filen) as img:
                         imgnp = np.array(img)
                         filename, suffix = os.path.splitext(filen)
@@ -121,7 +122,7 @@ def check_img(opt, path=None):
                 except OSError:
                     os.remove(filen)
                     print("==> File", filen, "Removed!")
-        rename_folder(dirn)
+        rename_folder(dirn, prefix=opt.DATASET_PATH)
 
 
 def coalesce_dirs(opt, path='./Datasets/'):
@@ -136,7 +137,7 @@ def coalesce_dirs(opt, path='./Datasets/'):
     for i, dirn in enumerate(dirs):
         files = [dirn/file for file in next(os.walk(dirn))[2] if file.suffix.lower() in [".jpg", ".png"]]
         if len(files) > 0:
-            rename_folder(dirn, prefix=str(i)+'_')
+            rename_folder(dirn, prefix=str(i))
     for i, dirn in enumerate(dirs):
         files = [dirn/file for file in next(os.walk(dirn))[2] if file.suffix.lower() in [".jpg", ".png"]]
         if len(files) > 0:
@@ -146,20 +147,19 @@ def coalesce_dirs(opt, path='./Datasets/'):
     rename_folder(path)
 
 
-def re_sep(opt, root='./Datasets/'):
+def re_sep(opt):
     """
     This function aims to redo the separation of dataset images after some arrangement of it like data-washing.
     :param opt:the config object of this project.
     :param root:the place where train_dataset and test_dataset are stored.
     :return:None
     """
-    root = Path(root)
-    train_path = root/'train_data'
-    test_path = root/'test_data'
+    train_path = './Datasets'/Path(opt.DATASET_PATH)/'train_data'
+    test_path = './Datasets'/Path(opt.DATASET_PATH)/'test_data'
     train_dirs = [train_path/i for i in next(os.walk(train_path))[1]]
     test_dirs = [test_path/i for i in next(os.walk(test_path))[1]]
     for dirn in train_dirs:
-        rename_folder(dirn, prefix='0_')
+        rename_folder(dirn, prefix='0')
     for dirn in test_dirs:
         rename_folder(dirn)
         files = [dirn/file for file in next(os.walk(dirn))[2] if file.split('.')[-1].lower() in ["jpg", "png"]]
@@ -182,10 +182,10 @@ def rename_folder(path, prefix=''):
 
     files = [path/name for name in os.listdir(path) if not name.startswith('.')]
     for i in range(len(files)):
-        os.rename(files[i], path/('temp_'+str(i)+'.jpg'))
+        os.rename(files[i], path/('temp_'+str(i)+ files[i].suffix))
     for i in range(len(files)):
-        os.rename(path/('temp_' + str(i) + '.jpg'),
-                  path/(prefix + str(i) + '.jpg'))
+        os.rename(path/('temp_' + str(i) + files[i].suffix),
+                  path/(prefix + '_' + str(i) + files[i].suffix))
 
 
 def gen_name(opt, path='./Datasets/', out_path='./source/reference/names.pkl'):
